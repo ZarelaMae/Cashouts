@@ -93,10 +93,8 @@
             failOnStatusCode: false
             }).then((approveResponse) => {
               expect(approveResponse.status).to.eq(200)
-              )
             })
           })
         })
       })
     })
-  })
