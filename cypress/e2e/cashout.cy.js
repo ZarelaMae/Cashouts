@@ -3,16 +3,16 @@ let adminToken
 let clientUsername
 let clientEmail
 let cashoutId
-let targetCompanyId
 
 it("should create and approve a cashout", () => {
 
   //Login customer play
+  const targetCompanyId = "650cbacb5b27367205467e2e"
   cy.request({
     method: "POST",
     url: "https://api.playplayplay.club/api/customer/authentication/login",
     body: {
-      companyId: "650cbacb5b27367205467e2e",
+      companyId: targetCompanyId,
       emailOrUsername: "zarelamae16@gmail.com",
       password: "16Mayo17.1@"
     }
@@ -21,10 +21,6 @@ it("should create and approve a cashout", () => {
     clientToken = response.body.data.token
     clientUsername = response.body.data.username
     clientEmail = response.body.data.email
-    targetCompanyId = response.body.data.companyId
-    cy.log("Response completa:" + clientUsername)
-    cy.log("Response completa:" + clientEmail)
-    cy.log("Response completa:" + targetCompanyId)
     // 2. Crear cashout
     cy.request({
       method: "POST",
@@ -44,17 +40,14 @@ it("should create and approve a cashout", () => {
         timeZone: "America/Lima"
       }
     }).then((cashoutResponse) => {
-
       if (cashoutResponse.status === 400) {
         expect(cashoutResponse.body.message).to.eq("You have pending operations")
-        cy.log("Ya existe un cashout pendiente para el usuario" )
+        cy.log("Ya existe un cashout pendiente para el usuario , pasamos a aprobar el que tiene pendiente" )
         return
       } else {
         expect(cashoutResponse.status).to.be.oneOf([200, 201])
       }
-
     })
-
     // 3. Login admin
     cy.request({
       method: "POST",
@@ -66,7 +59,6 @@ it("should create and approve a cashout", () => {
     }).then((adminResponse) => {
       expect(adminResponse.status).to.be.oneOf([200, 201])
       adminToken = adminResponse.body.data.token
-
     // 4. Traer compañia
       cy.request({
           method: "POST",
@@ -84,15 +76,13 @@ it("should create and approve a cashout", () => {
           if (changeCompanyResponse.body?.data?.token) {
             adminToken = changeCompanyResponse.body.data.token
           }
-
       // 5. Consultar cashout en dashboard
       const filters = [
         { type: "type", value: "Redeem" },
         { type: "transactionStatus", value: "Pending,Created,Approved" },
-        { type: "customerEmail", value: clientEmail }
+        { type: "customerEmail", value: clientEmail },
         { type: "customerUsername", value: clientUsername }
       ]
-
       cy.request({
         method: "GET",
         url: "https://api.playplayplay.club/api/transaction/paginated",
@@ -108,16 +98,12 @@ it("should create and approve a cashout", () => {
         failOnStatusCode: false
       }).then((response) => {
         expect(response.status).to.eq(200)
-
         const transactions = response.body.data.transactions
         cashoutId = transactions[0]._id
-
         cy.log("cashoutId: " + cashoutId)
         cy.log("cantidad: " + transactions.length)
         cy.log("cantidad: " + transactions[0].codeTransaction)
-
         console.log("transactions", transactions)
-
         // 6. Aprobaciones cashout
         cy.request({
           method: "PUT",
@@ -148,7 +134,6 @@ it("should create and approve a cashout", () => {
           }).then((secondApproveResponse) => {
             console.log("secondApproveResponse", secondApproveResponse.body)
             expect(secondApproveResponse.status).to.be.oneOf([200, 201])
-
             // 7. Buscar operacion en historial
             cy.request({
               method: "GET",
@@ -165,9 +150,7 @@ it("should create and approve a cashout", () => {
               failOnStatusCode: false
             }).then((response) => {
               expect(response.status).to.eq(200)
-
               const transactions = response.body.data.transactions
-
               cy.log("cantidad historial: " + transactions.length)
               cy.log("Status " + transactions[0].transactionStatus)
             })
