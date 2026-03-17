@@ -63,38 +63,38 @@
           expect(adminResponse.status).to.be.oneOf([200, 201])
           adminToken = adminResponse.body.data.token
 
-         // 4. Consultar cashout en dashboard
+         // 4. Cambiar compañía
+
+
+         // 5. Consultar cashout en dashboard
+         const filters = [
+                       { type: "type", value: "Redeem" },
+                       { type: "transactionStatus", value: "Pending,Created,Ready" },
+                       //{ type: "customerEmail", value: "taboadapaola3@gmail.com" } esta mostrando de high stakes :(
+                     // { type: "customerUsername", value: clientUsername }
+                     ]
           cy.request({
             method: "GET",
-            url: "https://api.playplayplay.club/api/transaction/paginated?page=1&pageSize=10000&timeZone=America/Chicago&filters=%5B%7B%22type%22%3A%22type%22%2C%22value%22%3A%22Redeem%22%7D%2C%7B%22type%22%3A%22transactionStatus%22%2C%22value%22%3A%22Pending%2CCreated%2C%20Ready%22%7D%5D",
+
+            url: "https://api.playplayplay.club/api/transaction/paginated",
             headers: {
               Authorization: `Bearer ${adminToken}`
-            }
-          }).then((response) => {
-          const transactions = response.body.data.transactions
-          const transaction = transactions.find(t =>
-          t.customerUsername === clientUsername &&
-          t.customerEmail === clientEmail
-          )
-          cashoutId = transaction.body.data.transactions._id
-          cy.log("Response completa:" + cashoutId)
-
-            // 5. Aprobar cashout
-           cy.request({
-           method: "PUT",
-           url: "https://api.playplayplay.club/api/process/accept-redeem",
-           headers: {
-             Authorization: `Bearer ${adminToken}`
-           },
-           body: {
-                 _id: cashoutId,
-                 platform: "Sweepstakes"
-                 },
+            },
+            qs: {
+                page: 1,
+                pageSize: 10000,
+                timeZone: "America/Chicago",
+                filters: JSON.stringify(filters)
+              },
             failOnStatusCode: false
-            }).then((approveResponse) => {
-              expect(approveResponse.status).to.eq(200)
+          }).then((response) => {
+           expect(response.status).to.eq(200)
+           const transactions = response.body.data.transactions
+             cy.log("cantidad: " + transactions.length)
+             console.log("transactions", transactions)
+           })
             })
           })
         })
-      })
-    })
+
+
