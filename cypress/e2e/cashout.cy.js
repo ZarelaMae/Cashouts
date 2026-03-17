@@ -1,3 +1,6 @@
+ const API_URL = "https://api.playplayplay.club"
+ const TARGET_COMPANY_ID = "650cbacb5b27367205467e2e"
+ const platformCashout = "Sweepstakes"
 let clientToken
 let adminToken
 let clientUsername
@@ -5,14 +8,12 @@ let clientEmail
 let cashoutId
 
 it("should create and approve a cashout", () => {
-
   //Login customer play
-  const targetCompanyId = "650cbacb5b27367205467e2e"
-  cy.request({
+   cy.request({
     method: "POST",
-    url: "https://api.playplayplay.club/api/customer/authentication/login",
+    url: `${API_URL}/api/customer/authentication/login`,
     body: {
-      companyId: targetCompanyId,
+      companyId: TARGET_COMPANY_ID,
       emailOrUsername: "zarelamae16@gmail.com",
       password: "16Mayo17.1@"
     }
@@ -24,18 +25,18 @@ it("should create and approve a cashout", () => {
     // 2. Crear cashout
     cy.request({
       method: "POST",
-      url: "https://api.playplayplay.club/api/transaction/customer-redeem",
+      url: `${API_URL}/api/transaction/customer-redeem`,
       headers: {
         Authorization: `Bearer ${clientToken}`
       },
       failOnStatusCode: false,
       body: {
-        amount: 100,
+        amount: 50,
         payFieldCustomer: {
           key: "1234a"
         },
         paymentMethodId: "675a18231bec994a6d84c55c",
-        platform: "Sweepstakes",
+        platform: platformCashout,
         providerName: "Manual",
         timeZone: "America/Lima"
       }
@@ -51,7 +52,7 @@ it("should create and approve a cashout", () => {
     // 3. Login admin
     cy.request({
       method: "POST",
-      url: "https://api.playplayplay.club/api/authentication/login/backend",
+      url: `${API_URL}/api/authentication/login/backend`,
       body: {
         username: "root",
         password: "Root2023@Backendv1"
@@ -62,12 +63,12 @@ it("should create and approve a cashout", () => {
     // 4. Traer compañia
       cy.request({
           method: "POST",
-          url: "https://api.playplayplay.club/api/authentication/change-company/master",
+          url: `${API_URL}/api/authentication/change-company/master`,
           headers: {
             Authorization: `Bearer ${adminToken}`
           },
           body: {
-            companyId: targetCompanyId
+            companyId: TARGET_COMPANY_ID
           },
           failOnStatusCode: false
         }).then((changeCompanyResponse) => {
@@ -85,7 +86,7 @@ it("should create and approve a cashout", () => {
       ]
       cy.request({
         method: "GET",
-        url: "https://api.playplayplay.club/api/transaction/paginated",
+        url: `${API_URL}/api/transaction/paginated`,
         headers: {
           Authorization: `Bearer ${adminToken}`
         },
@@ -99,22 +100,25 @@ it("should create and approve a cashout", () => {
       }).then((response) => {
         expect(response.status).to.eq(200)
         const transactions = response.body.data.transactions
-        cashoutId = transactions[0]._id
+        expect(transactions, "transactions list").to.have.length.greaterThan(0)
+        const targetTransaction = transactions.find(tx =>
+          ["Pending", "Created"].includes(tx.transactionStatus)
+        )
+        expect(targetTransaction, "cashout pending o created").to.exist
+        cashoutId = targetTransaction._id
         cy.log("cashoutId: " + cashoutId)
-        cy.log("cantidad: " + transactions.length)
-        cy.log("cantidad: " + transactions[0].codeTransaction)
         console.log("transactions", transactions)
         // 6. Aprobaciones cashout
         cy.request({
           method: "PUT",
-          url: "https://api.playplayplay.club/api/process/accept-redeem",
+          url: `${API_URL}/api/process/accept-redeem`,
           headers: {
             Authorization: `Bearer ${adminToken}`
           },
           failOnStatusCode: false,
           body: {
             _id: cashoutId,
-            platform: "Sweepstakes"
+            platform: platformCashout
           }
         }).then((firstApproveResponse) => {
           expect(firstApproveResponse.status).to.be.oneOf([200, 201])
@@ -122,14 +126,14 @@ it("should create and approve a cashout", () => {
 
           cy.request({
             method: "PUT",
-            url: "https://api.playplayplay.club/api/process/approve-redeem",
+            url: `${API_URL}/api/process/approve-redeem`,
             headers: {
               Authorization: `Bearer ${adminToken}`
             },
             failOnStatusCode: false,
             body: {
               _id: cashoutId,
-              platform: "Sweepstakes"
+              platform: platformCashout
             }
           }).then((secondApproveResponse) => {
             console.log("secondApproveResponse", secondApproveResponse.body)
@@ -137,7 +141,7 @@ it("should create and approve a cashout", () => {
             // 7. Buscar operacion en historial
             cy.request({
               method: "GET",
-              url: "https://api.playplayplay.club/api/transaction/paginated",
+              url: `${API_URL}/api/transaction/paginated`,
               headers: {
                 Authorization: `Bearer ${adminToken}`
               },
