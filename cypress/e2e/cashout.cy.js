@@ -3,6 +3,7 @@ let adminToken
 let clientUsername
 let clientEmail
 let cashoutId
+let targetCompanyId
 
 it("should create and approve a cashout", () => {
 
@@ -20,10 +21,10 @@ it("should create and approve a cashout", () => {
     clientToken = response.body.data.token
     clientUsername = response.body.data.username
     clientEmail = response.body.data.email
-
+    targetCompanyId = response.body.data.companyId
     cy.log("Response completa:" + clientUsername)
     cy.log("Response completa:" + clientEmail)
-
+    cy.log("Response completa:" + targetCompanyId)
     // 2. Crear cashout
     cy.request({
       method: "POST",
@@ -66,14 +67,30 @@ it("should create and approve a cashout", () => {
       expect(adminResponse.status).to.be.oneOf([200, 201])
       adminToken = adminResponse.body.data.token
 
-      // 4. Cambiar compañía
+    // 4. Traer compañia
+      cy.request({
+          method: "POST",
+          url: "https://api.playplayplay.club/api/authentication/change-company/master",
+          headers: {
+            Authorization: `Bearer ${adminToken}`
+          },
+          body: {
+            companyId: targetCompanyId
+          },
+          failOnStatusCode: false
+        }).then((changeCompanyResponse) => {
+          console.log("changeCompanyResponse", changeCompanyResponse)
+
+          if (changeCompanyResponse.body?.data?.token) {
+            adminToken = changeCompanyResponse.body.data.token
+          }
 
       // 5. Consultar cashout en dashboard
       const filters = [
         { type: "type", value: "Redeem" },
         { type: "transactionStatus", value: "Pending,Created,Approved" },
-        { type: "customerEmail", value: "taboadapaola6@gmail.com" }
-        //{ type: "customerUsername", value: clientUsername }
+        { type: "customerEmail", value: clientEmail }
+        { type: "customerUsername", value: clientUsername }
       ]
 
       cy.request({
@@ -154,7 +171,7 @@ it("should create and approve a cashout", () => {
               cy.log("cantidad historial: " + transactions.length)
               cy.log("Status " + transactions[0].transactionStatus)
             })
-
+            })
           })
         })
       })
