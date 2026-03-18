@@ -1,7 +1,26 @@
-const API_URL = "https://api.playplayplay.club"
-const TARGET_COMPANY_ID = "650cbacb5b27367205467e2e"
-const platformCashout = "Sweepstakes"
-const cashoutAmount = 50
+const TEST_DATA = {
+  companyId: "650cbacb5b27367205467e2e",
+  apiUrl: "https://api.playplayplay.club",
+  customer: {
+    emailOrUsername: "zarelamae16@gmail.com",
+    password: "16Mayo17.1@"
+  },
+  admin: {
+    username: "root",
+    password: "Root2023@Backendv1"
+  },
+  cashout: {
+    amount: 50,
+    paymentMethodId: "675a18231bec994a6d84c55c",
+    platform: "Sweepstakes",
+    providerName: "Manual",
+    timeZonePlayer: "America/Lima",
+    timeZoneManager: "America/Chicago",
+    payFieldCustomer: {
+      key: "1234a"
+    }
+  }
+}
 
 let clientToken
 let adminToken
@@ -14,11 +33,11 @@ it("should create and approve a cashout", () => {
   // Login customer play
   cy.request({
     method: "POST",
-    url: `${API_URL}/api/customer/authentication/login`,
+    url: `${TEST_DATA.apiUrl}/api/customer/authentication/login`,
     body: {
-      companyId: TARGET_COMPANY_ID,
-      emailOrUsername: "zarelamae16@gmail.com",
-      password: "16Mayo17.1@"
+      companyId: TEST_DATA.companyId,
+      emailOrUsername: TEST_DATA.customer.emailOrUsername,
+      password: TEST_DATA.customer.password
     }
   }).then((response) => {
     expect(response.status).to.eq(200)
@@ -30,25 +49,25 @@ it("should create and approve a cashout", () => {
     // 2. Crear cashout
     cy.request({
       method: "POST",
-      url: `${API_URL}/api/transaction/customer-redeem`,
+      url: `${TEST_DATA.apiUrl}/api/transaction/customer-redeem`,
       headers: {
         Authorization: `Bearer ${clientToken}`
       },
       failOnStatusCode: false,
       body: {
-        amount: cashoutAmount,
+        amount: TEST_DATA.cashout.amount,
         payFieldCustomer: {
-          key: "1234a"
+          key: TEST_DATA.cashout.payFieldCustomer.key
         },
-        paymentMethodId: "675a18231bec994a6d84c55c",
-        platform: platformCashout,
-        providerName: "Manual",
-        timeZone: "America/Lima"
+        paymentMethodId: TEST_DATA.cashout.paymentMethodId,
+        platform: TEST_DATA.cashout.platform,
+        providerName: TEST_DATA.cashout.providerName,
+        timeZone: TEST_DATA.cashout.timeZonePlayer
       }
     }).then((cashoutResponse) => {
       if (cashoutResponse.status === 400) {
         expect(cashoutResponse.body.message).to.eq("You have pending operations")
-        cy.log("Ya existe un cashout pendiente para el usuario, pasamos a aprobar el que tiene pendiente")
+        cy.log("Ya existe un cashout pendiente para el usuario")
       return
       } else {
         expect(cashoutResponse.status).to.be.oneOf([200, 201])
@@ -56,7 +75,7 @@ it("should create and approve a cashout", () => {
         // 2.1 Verificar balance reducido al generar cashout
         cy.request({
           method: "GET",
-          url: `${API_URL}/api/customer/full`,
+          url: `${TEST_DATA.apiUrl}/api/customer/full`,
           headers: {
             Authorization: `Bearer ${clientToken}`
           },
@@ -65,17 +84,17 @@ it("should create and approve a cashout", () => {
           expect(balanceResponse.status).to.eq(200)
 
           const finalBalance = balanceResponse.body.data.amountInPlatform
-          expect(finalBalance).to.eq(clientBalance - cashoutAmount)
+          expect(finalBalance).to.eq(clientBalance - TEST_DATA.cashout.amount)
         })
       }
 
       // 3. Login admin
       cy.request({
         method: "POST",
-        url: `${API_URL}/api/authentication/login/backend`,
+        url: `${TEST_DATA.apiUrl}/api/authentication/login/backend`,
         body: {
-          username: "root",
-          password: "Root2023@Backendv1"
+          username: TEST_DATA.admin.username,
+          password: TEST_DATA.admin.password
         }
       }).then((adminResponse) => {
         expect(adminResponse.status).to.be.oneOf([200, 201])
@@ -84,12 +103,12 @@ it("should create and approve a cashout", () => {
         // 4. Traer compañía
         cy.request({
           method: "POST",
-          url: `${API_URL}/api/authentication/change-company/master`,
+          url: `${TEST_DATA.apiUrl}/api/authentication/change-company/master`,
           headers: {
             Authorization: `Bearer ${adminToken}`
           },
           body: {
-            companyId: TARGET_COMPANY_ID
+            companyId: TEST_DATA.companyId
           },
           failOnStatusCode: false
         }).then((changeCompanyResponse) => {
@@ -109,14 +128,14 @@ it("should create and approve a cashout", () => {
 
           cy.request({
             method: "GET",
-            url: `${API_URL}/api/transaction/paginated`,
+            url: `${TEST_DATA.apiUrl}/api/transaction/paginated`,
             headers: {
               Authorization: `Bearer ${adminToken}`
             },
             qs: {
               page: 1,
               pageSize: 10000,
-              timeZone: "America/Chicago",
+              timeZone: TEST_DATA.cashout.timeZoneManager,
               filters: JSON.stringify(filters)
             },
             failOnStatusCode: false
@@ -141,14 +160,14 @@ it("should create and approve a cashout", () => {
             // 6. Aprobaciones cashout
             cy.request({
               method: "PUT",
-              url: `${API_URL}/api/process/accept-redeem`,
+              url: `${TEST_DATA.apiUrl}/api/process/accept-redeem`,
               headers: {
                 Authorization: `Bearer ${adminToken}`
               },
               failOnStatusCode: false,
               body: {
                 _id: cashoutId,
-                platform: platformCashout
+                platform: TEST_DATA.cashout.platform
               }
             }).then((firstApproveResponse) => {
               expect(firstApproveResponse.status).to.be.oneOf([200, 201])
@@ -156,14 +175,14 @@ it("should create and approve a cashout", () => {
 
               cy.request({
                 method: "PUT",
-                url: `${API_URL}/api/process/approve-redeem`,
+                url: `${TEST_DATA.apiUrl}/api/process/approve-redeem`,
                 headers: {
                   Authorization: `Bearer ${adminToken}`
                 },
                 failOnStatusCode: false,
                 body: {
                   _id: cashoutId,
-                  platform: platformCashout
+                  platform: TEST_DATA.cashout.platform
                 }
               }).then((secondApproveResponse) => {
                 console.log("secondApproveResponse", secondApproveResponse.body)
@@ -172,14 +191,14 @@ it("should create and approve a cashout", () => {
                 // 7. Buscar operación en historial
                 cy.request({
                   method: "GET",
-                  url: `${API_URL}/api/transaction/paginated`,
+                  url: `${TEST_DATA.apiUrl}/api/transaction/paginated`,
                   headers: {
                     Authorization: `Bearer ${adminToken}`
                   },
                   qs: {
                     page: 1,
                     pageSize: 10000,
-                    timeZone: "America/Chicago",
+                    timeZone: TEST_DATA.cashout.timeZoneManager,
                     filters: JSON.stringify(filters)
                   },
                   failOnStatusCode: false
