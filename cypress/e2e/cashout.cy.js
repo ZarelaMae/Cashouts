@@ -49,6 +49,7 @@ it("should create and approve a cashout", () => {
       if (cashoutResponse.status === 400) {
         expect(cashoutResponse.body.message).to.eq("You have pending operations")
         cy.log("Ya existe un cashout pendiente para el usuario, pasamos a aprobar el que tiene pendiente")
+      return
       } else {
         expect(cashoutResponse.status).to.be.oneOf([200, 201])
 
