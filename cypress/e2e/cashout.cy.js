@@ -1,26 +1,5 @@
-const TEST_DATA = {
-  companyId: "650cbacb5b27367205467e2e",
-  apiUrl: "https://api.playplayplay.club",
-  customer: {
-    emailOrUsername: "zarelamae16@gmail.com",
-    password: "16Mayo17.1@"
-  },
-  admin: {
-    username: "root",
-    password: "Root2023@Backendv1"
-  },
-  cashout: {
-    amount: 50,
-    paymentMethodId: "675a18231bec994a6d84c55c",
-    platform: "Sweepstakes",
-    providerName: "Manual",
-    timeZonePlayer: "America/Lima",
-    timeZoneManager: "America/Chicago",
-    payFieldCustomer: {
-      key: "1234a"
-    }
-  }
-}
+
+describe("Cashout flow", () => {
 
 let clientToken
 let adminToken
@@ -28,6 +7,13 @@ let clientUsername
 let clientEmail
 let clientBalance
 let cashoutId
+let TEST_DATA
+
+  beforeEach(() => {
+    cy.fixture("testData").then((data) => {
+      TEST_DATA = data
+    })
+  })
 
 it("should create and approve a cashout", () => {
   // Login customer play
@@ -217,4 +203,5 @@ it("should create and approve a cashout", () => {
       })
     })
   })
+})
 })
