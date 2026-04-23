@@ -10,11 +10,11 @@
     "password": "Root2023@Backendv1"
   },
   "cashout": {
-    "amount": 50,
+    "amount": 100,
     "payFieldCustomer": {
       "key": "1234a"
     },
-    "paymentMethodId": "675a18231bec994a6d84c55c",
+    "paymentMethodId": "69bd7a481ad4d7f3e5c05476",
     "platform": "Sweepstakes",
     "providerName": "Manual",
     "timeZoneManager": "America/Chicago",
